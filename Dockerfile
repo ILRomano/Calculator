@@ -1,7 +1,10 @@
-FROM python:3.8-slim
-RUN mkdir /app
-WORKDIR /app
-COPY . /app
-RUN pip3 install -r requirements.txt
-EXPOSE 5000
-ENTRYPOINT ["gunicorn", "--config", "gunicorn_config.py", "wsgi:app"]
+FROM maven:latest AS build
+RUN mkdir -p /workspace
+WORKDIR /workspace
+COPY pom.xml /workspace
+COPY src /workspace/src
+RUN mvn -B package --file pom.xml
+
+FROM openjdk:14-slim
+COPY --from=build /workspace/target/*.jar app.jar
+ENTRYPOINT ["java","-jar","app.jar"]
